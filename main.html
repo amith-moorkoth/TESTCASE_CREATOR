@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>jQuery.parseHTML demo</title>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+ 
+<textarea id='mytextarea'></textarea>
+<button onclick="clickme()">generate</button>
+<button onclick="selectElementContents( $('#log')[0] );">select content</button>
+
+
+  <h3>Content:</h3>
+  
+  <table border="1">
+</table>
+ 
+<table border="1">
+<thead><td>TestcaseID</td><td>Section Name</td><td>Label</td><td>TestCase</td><td>TestData</td><td>Expected Result</td><td>Condition</td><td>Stack</td><td>ElementID</td></thead>
+<tbody id="log">
+</tbody>
+</table>
+ 
+
+ 
+<script>
+
+function selectElementContents(el) {
+	var body = document.body, range, sel;
+	if (document.createRange && window.getSelection) {
+		range = document.createRange();
+		sel = window.getSelection();
+		sel.removeAllRanges();
+		try {
+			range.selectNodeContents(el);
+			sel.addRange(range);
+		} catch (e) {
+			range.selectNode(el);
+			sel.addRange(range);
+		}
+	} else if (body.createTextRange) {
+		range = body.createTextRange();
+		range.moveToElementText(el);
+		range.select();
+	}
+}
+
+
+function clickme(){
+	var $log = $( "#log" );
+	var val=document.getElementById("mytextarea").value;  
+	var arr = val.split('<');
+	var sectionname=get_textfromarr_incr(arr,i);	
+	for(var i=0; i<=arr.length; i++){
+		var htmlObject = create_html_dom("<"+arr[i]);
+		var label="";
+		if(htmlObject!=null){
+			if((htmlObject.tagName=="INPUT" || htmlObject.tagName=="TEXTAREA") && htmlObject.type!="image"){
+			if(htmlObject.type=="checkbox" || htmlObject.type=="radio"){
+				label= get_textfromarr_incr(arr,i);				
+			}else if(htmlObject.type=="button"){
+				label= htmlObject.value;
+			}else{
+				if(htmlObject.tagName!="TEXTAREA"){label= get_textfromarr_decr(arr,i);}
+				if(label==""){label= get_textfromarr_decr(arr,i-1);}
+			}
+			}else if(htmlObject.tagName=="SELECT" && htmlObject.type!="image"){
+				label= get_textfromarr_decr(arr,i);
+			}
+		}
+		
+		if(htmlObject!=null){
+			/*writing table*/
+			if(htmlObject.id!=undefined && htmlObject.id!="" && htmlObject.type!="image"){
+			if(htmlObject.tagName=="INPUT" || htmlObject.tagName=="TEXTAREA"|| htmlObject.tagName=="SELECT"){
+				$log.append("<tr><td></td><td>"+sectionname+"</td><td>"+label+"</td><td>"+gettestcase(htmlObject)+"</td><td>"+getmytestdata(htmlObject,arr,i)+"</td><td></td><td>"+gettestcondition(htmlObject)+"</td><td>"+stackme(htmlObject)+"</td><td>"+htmlObject.id+"</td></tr>");
+				}
+			}
+			//$log.append( htmlObject.id +" , ::: "+label+"<br/>");
+		}
+	}
+ }
+ 
+ function getmytestdata(htmlObject,arr,i){
+	var testdata="";
+	if(htmlObject.tagName=="SELECT"){
+		testdata=get_textfromarr_incr(arr,i+2);
+	}else if(htmlObject.type=="text"){
+		testdata="sample text";
+	}
+	return testdata;
+ }
+ 
+ function stackme(htmlObject){
+	if(htmlObject.type!="radio" && htmlObject.type!="button"){
+		return "push";
+	}else{
+		return "";
+	}
+ }
+ 
+  function gettestcondition(htmlObject){
+	var testcase="";
+	if(htmlObject.tagName=="INPUT" || htmlObject.tagName=="TEXTAREA"){
+		if(htmlObject.type=="checkbox"){
+			testcase="isCheckSaved";
+		}else if(htmlObject.type=="radio"){
+			testcase="isRadioSaved";
+		}else if(htmlObject.type=="button"){
+			testcase="opensubform";
+		}else{
+			testcase="saveInput";
+		}
+	}else if(htmlObject.tagName=="SELECT" && htmlObject.type!="image"){
+		testcase="isdropdownSaved";
+	}
+ 
+	return testcase;
+ }
+
+ 
+ function gettestcase(htmlObject){
+	var testcase="";
+	if(htmlObject.tagName=="INPUT" || htmlObject.tagName=="TEXTAREA"){
+		if(htmlObject.type=="checkbox"){
+			testcase="click on the check box and verify if its saving and vice versa";
+		}else if(htmlObject.type=="radio"){
+			testcase="click on the radio and verify if its saving and vice versa";
+		}else if(htmlObject.type=="button"){
+			testcase="open form and check its opening or not";
+		}else{
+			testcase="save the input with value";
+		}
+	}else if(htmlObject.tagName=="SELECT" && htmlObject.type!="image"){
+		testcase="select value from drop down and save the form";
+	}
+ 
+	return testcase;
+ }
+ 
+ 
+ function get_textfromarr_incr(arr,i){
+ var label="";var j=0;var k=0;
+	while(label==""){
+	if(create_html_dom("<"+arr[i+j])!=null){
+		label= $(create_html_dom("<"+arr[i+j]).parentNode).text().trim();
+		j++;
+		}else{
+		k++;
+		}
+		if(k==4){break;}
+	}
+	return label;
+ }
+
+ 
+ function get_textfromarr_decr(arr,i){
+ var label="";var j=0;var k=0;
+	while(label==""){
+	if(create_html_dom("<"+arr[i-j])!=null){
+		label= $(create_html_dom("<"+arr[i-j]).parentNode).text().trim();
+		j++;}else{
+		k++;
+		}
+		if(k==4){break;}
+	}
+	
+	return label;
+ }
+ 
+ function create_html_dom(html_str){
+		var temp = document.createElement('div');
+		temp.innerHTML = html_str;
+		var htmlObject = temp.firstChild;
+		return htmlObject;
+ }
+</script>
+
+</body>
+</html>
